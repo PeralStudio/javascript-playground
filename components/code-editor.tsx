@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import Editor from "@monaco-editor/react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus } from "lucide-react";
+import { Plus, Terminal, Circle, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { EditorTab } from "./editor-tab";
 import { EditorToolbar } from "./editor-toolbar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -43,7 +44,6 @@ const AVAILABLE_PACKAGES = {
 };
 
 export function CodeEditor() {
-    const { theme: appTheme, setTheme } = useTheme();
     const [editorTheme, setEditorTheme] = useState<"vs-dark" | "light">("vs-dark");
     const [output, setOutput] = useState("");
     const [error, setError] = useState("");
@@ -53,7 +53,6 @@ export function CodeEditor() {
     const timeoutRef = useRef<NodeJS.Timeout>();
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const [nextTabId, setNextTabId] = useState(1);
-
     const [tabs, setTabs] = useState<FileTab[]>([]);
     const [activeTab, setActiveTab] = useState("");
 
@@ -108,7 +107,7 @@ export function CodeEditor() {
     }, [activeTab, packages]);
 
     const toggleEditorTheme = () => {
-        setEditorTheme((prev) => (prev === "vs-dark" ? "light" : "vs-dark"));
+        setEditorTheme((prev: any) => (prev === "vs-dark" ? "light" : "vs-dark"));
     };
 
     const customConsole = {
@@ -123,7 +122,7 @@ export function CodeEditor() {
         },
         error: (...args: any[]) => {
             const formatted = args.map((arg) => String(arg)).join(" ");
-            outputRef.current = [...outputRef.current, `Error: ${formatted}`];
+            outputRef.current = [...outputRef.current, `ReferenceError: ${formatted}`];
             setOutput(outputRef.current.join("\n"));
             setError(formatted);
         },
@@ -156,6 +155,11 @@ export function CodeEditor() {
             outputRef.current = [];
             setOutput("");
             setError("");
+
+            if (!codeToExecute || codeToExecute.trim() === "") {
+                setOutput("Editor is empty. Please write some code! 🚀");
+                return;
+            }
 
             const createContext = () => {
                 const context: Record<string, any> = { console: customConsole };
@@ -199,10 +203,8 @@ export function CodeEditor() {
     );
 
     const handleEditorChange = (value: string | undefined) => {
-        if (!value) return;
-
-        setTabs((prev) =>
-            prev.map((tab) => (tab.id === activeTab ? { ...tab, content: value } : tab))
+        setTabs((prev: any) =>
+            prev.map((tab: any) => (tab.id === activeTab ? { ...tab, content: value } : tab))
         );
 
         if (timeoutRef.current) {
@@ -283,6 +285,28 @@ export function CodeEditor() {
 
     const shareCode = async () => {
         try {
+            const currentCode = getCurrentCode();
+            const shareData = {
+                title: "Check out this code!",
+                text: currentCode,
+                url: window.location.href
+            };
+
+            if (navigator.share) {
+                await navigator.share(shareData);
+                toast.success("Code shared successfully!");
+            } else {
+                await navigator.clipboard.writeText(currentCode);
+                toast.success("Code copied to clipboard!");
+            }
+        } catch (error) {
+            console.log(error);
+            toast.error("Failed to share code:", error);
+        }
+    };
+
+    const copyCode = async () => {
+        try {
             await navigator.clipboard.writeText(getCurrentCode());
             toast.success("Code copied to clipboard!");
         } catch (error) {
@@ -314,8 +338,10 @@ export function CodeEditor() {
     };
 
     const handlePackageToggle = (pkg: string) => {
-        setPackages((prev) => {
-            const newPackages = prev.includes(pkg) ? prev.filter((p) => p !== pkg) : [...prev, pkg];
+        setPackages((prev: any) => {
+            const newPackages = prev.includes(pkg)
+                ? prev.filter((p: any) => p !== pkg)
+                : [...prev, pkg];
             localStorage.setItem("playground-packages", JSON.stringify(newPackages));
             return newPackages;
         });
@@ -365,6 +391,21 @@ export function CodeEditor() {
                             </div>
                         </div>
                         <div className="flex-1 relative">
+                            {" "}
+                            <div className="absolute top-2 right-6 z-10">
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button onClick={copyCode} variant="ghost" size="sm">
+                                                <Copy className="w-4 h-4" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Copy code</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
                             <Editor
                                 height="100%"
                                 defaultLanguage="javascript"
@@ -391,14 +432,26 @@ export function CodeEditor() {
                 <ResizableHandle withHandle />
 
                 <ResizablePanel defaultSize={50} minSize={30}>
-                    <ScrollArea
-                        ref={scrollAreaRef}
-                        className="h-full max-h-[100vh] p-8 overflow-y-auto"
-                    >
-                        <pre className="font-mono text-sm whitespace-pre-wrap break-words">
-                            {output || "Console output will appear here..."}
-                        </pre>
-                    </ScrollArea>
+                    <div className="h-full bg-black/5 dark:bg-white/5">
+                        <div className="p-4 border-b bg-background/95">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Terminal className="w-5 h-5" />
+                                    <h2 className="text-lg font-semibold">Console Output</h2>
+                                </div>
+                                <div className="flex gap-1.5">
+                                    <Circle className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                    <Circle className="w-3 h-3 fill-green-400 text-green-400" />
+                                    <Circle className="w-3 h-3 fill-red-400 text-red-400" />
+                                </div>
+                            </div>
+                        </div>
+                        <ScrollArea ref={scrollAreaRef} className="h-[calc(100%-4rem)] p-4">
+                            <pre className="font-mono text-sm whitespace-pre-wrap break-words p-4 rounded-lg ">
+                                {output || "Console output will appear here..."}
+                            </pre>
+                        </ScrollArea>
+                    </div>
                 </ResizablePanel>
             </ResizablePanelGroup>
 
