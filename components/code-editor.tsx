@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import Editor from "@monaco-editor/react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Terminal, Circle, Copy } from "lucide-react";
+import { Plus, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -19,6 +19,7 @@ import chalk from "chalk";
 import * as R from "ramda";
 import { TerminalHeader } from "./terminal-header";
 import { EditorTabsScrollArea } from "./EditorTabsScrollArea";
+import { TerminalOutput } from "./terminal-output";
 
 interface FileTab {
     id: string;
@@ -57,6 +58,7 @@ export function CodeEditor() {
     const [tabs, setTabs] = useState<FileTab[]>([]);
     const [activeTab, setActiveTab] = useState("");
     const [isLoadingEditor, setIsLoadingEditor] = useState(true);
+    const [isHovered, setIsHovered] = useState(false);
 
     useEffect(() => {
         const savedTabs = localStorage.getItem("playground-tabs");
@@ -316,6 +318,15 @@ export function CodeEditor() {
         }
     };
 
+    const copyCodeTerminal = async () => {
+        try {
+            await navigator.clipboard.writeText(output);
+            toast.success("Result copied to clipboard!");
+        } catch (error) {
+            toast.error("Failed to copy code");
+        }
+    };
+
     const downloadCode = () => {
         const currentTab = tabs.find((tab) => tab.id === activeTab);
         const blob = new Blob([currentTab?.content || ""], { type: "text/javascript" });
@@ -406,25 +417,32 @@ export function CodeEditor() {
                                     </Tooltip>
                                 </div>
                             </div>
-                            <div className="flex-1 relative">
-                                {!isLoadingEditor && (
-                                    <div className="absolute top-2 right-6 z-10">
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button
-                                                    onClick={copyCode}
-                                                    variant="ghost"
-                                                    size="sm"
-                                                >
-                                                    <Copy className="w-4 h-4" />
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>Copy code</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </div>
-                                )}
+                            <div
+                                className="flex-1 relative"
+                                onMouseEnter={() => setIsHovered(true)} // Cuando el ratón entra
+                                onMouseLeave={() => setIsHovered(false)} // Cuando el ratón sale
+                            >
+                                {!isLoadingEditor &&
+                                    isHovered && ( // Muestra el botón solo si está cargando y el ratón está encima
+                                        <div
+                                            className="absolute top-2 right-6 z-10 cursor-pointer bg-gray-800 py-1 px-2 rounded-sm hover:bg-gray-700 hover:scale-101 transition-all duration-200"
+                                            onClick={copyCode}
+                                        >
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <div className="flex">
+                                                        <Copy className="w-4 h-4 mr-1" />
+                                                        <span className="text-xs transition-colors duration-200">
+                                                            Copy code
+                                                        </span>
+                                                    </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Copy code</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </div>
+                                    )}
                                 <Editor
                                     height="100%"
                                     defaultLanguage="javascript"
@@ -454,11 +472,7 @@ export function CodeEditor() {
                     <ResizablePanel defaultSize={50} minSize={30}>
                         <div className="h-full bg-black/5 dark:bg-white/5">
                             <TerminalHeader />
-                            <ScrollArea ref={scrollAreaRef} className="h-[calc(100%-4rem)] p-4">
-                                <pre className="font-mono text-sm whitespace-pre-wrap break-words p-4 rounded-lg ">
-                                    {output || "Console output will appear here..."}
-                                </pre>
-                            </ScrollArea>
+                            <TerminalOutput output={output} ref={scrollAreaRef} />
                         </div>
                     </ResizablePanel>
                 </ResizablePanelGroup>

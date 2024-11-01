@@ -44,15 +44,17 @@ export function EditorTab({
                 isActive ? "bg-secondary" : "hover:bg-muted"
             }`}
             onClick={() => !isEditing && onActivate()}
+            onDoubleClick={onStartRename}
         >
             {isEditing ? (
                 <Input
                     ref={inputRef}
-                    className="h-6 w-32 px-1 py-0"
+                    className="h-5 w-32 px-1 py-0"
                     defaultValue={name.replace(/\.js$/, "")}
                     onBlur={(e) => onRename(e.target.value)}
                     onKeyDown={handleRenameKeyDown}
                     autoFocus
+                    onFocus={(e) => e.target.select()}
                 />
             ) : (
                 <>

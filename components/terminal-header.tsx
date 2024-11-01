@@ -4,7 +4,7 @@ import { Terminal, Circle } from "lucide-react";
 
 export function TerminalHeader() {
     return (
-        <div className="p-4 border-b bg-background/95 select-none">
+        <div className="p-3 border-b bg-background/95 select-none">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Terminal className="w-5 h-5" />
