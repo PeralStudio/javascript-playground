@@ -59,6 +59,18 @@ export function CodeEditor() {
     const [activeTab, setActiveTab] = useState("");
     const [isLoadingEditor, setIsLoadingEditor] = useState(true);
     const [isHovered, setIsHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+        // Solo se ejecuta en el cliente
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+
+        handleResize(); // Ejecutar una vez al montar
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
     useEffect(() => {
         const savedTabs = localStorage.getItem("playground-tabs");
@@ -111,7 +123,7 @@ export function CodeEditor() {
     }, [activeTab, packages]);
 
     const toggleEditorTheme = () => {
-        setEditorTheme((prev: any) => (prev === "vs-dark" ? "light" : "vs-dark"));
+        setEditorTheme((prev) => (prev === "vs-dark" ? "light" : "vs-dark"));
     };
 
     const customConsole = {
@@ -207,8 +219,8 @@ export function CodeEditor() {
     );
 
     const handleEditorChange = (value: string | undefined) => {
-        setTabs((prev: any) =>
-            prev.map((tab: any) => (tab.id === activeTab ? { ...tab, content: value } : tab))
+        setTabs((prev) =>
+            prev.map((tab) => (tab.id === activeTab ? { ...tab, content: value } : tab))
         );
 
         if (timeoutRef.current) {
@@ -279,14 +291,6 @@ export function CodeEditor() {
         return tabs.find((tab) => tab.id === activeTab)?.content || "";
     };
 
-    // const clearCode = () => {
-    //     setTabs((prev) =>
-    //         prev.map((tab) => (tab.id === activeTab ? { ...tab, content: defaultCode } : tab))
-    //     );
-    //     executeCode(defaultCode);
-    //     toast.info("Editor reset to default code");
-    // };
-
     const shareCode = async () => {
         try {
             const currentCode = getCurrentCode();
@@ -305,7 +309,7 @@ export function CodeEditor() {
             }
         } catch (error) {
             console.log(error);
-            toast.error("Failed to share code:", error);
+            toast.error("Failed to share code");
         }
     };
 
@@ -313,15 +317,6 @@ export function CodeEditor() {
         try {
             await navigator.clipboard.writeText(getCurrentCode());
             toast.success("Code copied to clipboard!");
-        } catch (error) {
-            toast.error("Failed to copy code");
-        }
-    };
-
-    const copyCodeTerminal = async () => {
-        try {
-            await navigator.clipboard.writeText(output);
-            toast.success("Result copied to clipboard!");
         } catch (error) {
             toast.error("Failed to copy code");
         }
@@ -351,9 +346,9 @@ export function CodeEditor() {
     };
 
     const handlePackageToggle = (pkg: string) => {
-        setPackages((prev: any) => {
+        setPackages((prev) => {
             const newPackages = prev.includes(pkg)
-                ? prev.filter((p: any) => p !== pkg)
+                ? prev.filter((p) => p !== pkg)
                 : [...prev, pkg];
             localStorage.setItem("playground-packages", JSON.stringify(newPackages));
             return newPackages;
@@ -365,144 +360,139 @@ export function CodeEditor() {
     const handleEditorBeforeMount = () => setIsLoadingEditor(false);
 
     return (
-        <>
-            <TooltipProvider>
-                <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border">
-                    <ResizablePanel defaultSize={50} minSize={35}>
-                        <div className="h-full flex flex-col">
-                            <EditorToolbar
-                                packagesCount={packages.length}
-                                editorTheme={editorTheme}
-                                onRun={runCode}
-                                // onReset={clearCode}
-                                onToggleTheme={toggleEditorTheme}
-                                onDownload={downloadCode}
-                                onShare={shareCode}
-                                togglePackage={togglePackage}
-                            />
-                            <div className="border-b">
-                                <div className="flex items-center">
-                                    <EditorTabsScrollArea>
-                                        {tabs.map((tab) => (
-                                            <EditorTab
-                                                key={tab.id}
-                                                id={tab.id}
-                                                name={tab.name}
-                                                isActive={activeTab === tab.id}
-                                                isEditing={!!tab.isEditing}
-                                                onActivate={() => setActiveTab(tab.id)}
-                                                onClose={(e) => closeTab(tab.id, e)}
-                                                onStartRename={(e) => startRenaming(tab.id, e)}
-                                                onRename={(newName) =>
-                                                    handleRename(tab.id, newName)
-                                                }
-                                                onCancelRename={cancelRename}
-                                            />
-                                        ))}
-                                    </EditorTabsScrollArea>
+        <TooltipProvider>
+            <ResizablePanelGroup
+                direction={isMobile ? "vertical" : "horizontal"}
+                className="h-full rounded-lg border"
+            >
+                <ResizablePanel defaultSize={50} minSize={30}>
+                    <div className="h-full flex flex-col">
+                        <EditorToolbar
+                            packagesCount={packages.length}
+                            editorTheme={editorTheme}
+                            onRun={runCode}
+                            onToggleTheme={toggleEditorTheme}
+                            onDownload={downloadCode}
+                            onShare={shareCode}
+                            togglePackage={togglePackage}
+                        />
+                        <div className="border-b">
+                            <div className="flex items-center">
+                                <EditorTabsScrollArea>
+                                    {tabs.map((tab) => (
+                                        <EditorTab
+                                            key={tab.id}
+                                            id={tab.id}
+                                            name={tab.name}
+                                            isActive={activeTab === tab.id}
+                                            isEditing={!!tab.isEditing}
+                                            onActivate={() => setActiveTab(tab.id)}
+                                            onClose={(e) => closeTab(tab.id, e)}
+                                            onStartRename={(e) => startRenaming(tab.id, e)}
+                                            onRename={(newName) => handleRename(tab.id, newName)}
+                                            onCancelRename={cancelRename}
+                                        />
+                                    ))}
+                                </EditorTabsScrollArea>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="px-2 ml-1"
+                                            onClick={addNewTab}
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>New tab</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
+                        </div>
+                        <div
+                            className="flex-1 relative"
+                            onMouseEnter={() => setIsHovered(true)}
+                            onMouseLeave={() => setIsHovered(false)}
+                        >
+                            {!isLoadingEditor && isHovered && (
+                                <div
+                                    className="absolute top-2 right-6 z-10 cursor-pointer bg-gray-800 py-1 px-2 rounded-sm hover:bg-gray-700 hover:scale-101 transition-all duration-200"
+                                    onClick={copyCode}
+                                >
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="px-2 ml-1"
-                                                onClick={addNewTab}
-                                            >
-                                                <Plus className="w-4 h-4" />
-                                            </Button>
+                                            <div className="flex">
+                                                <Copy className="w-4 h-4 mr-1" />
+                                                <span className="text-xs transition-colors duration-200">
+                                                    Copy code
+                                                </span>
+                                            </div>
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                            <p>New tab</p>
+                                            <p>Copy code</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </div>
-                            </div>
-                            <div
-                                className="flex-1 relative"
-                                onMouseEnter={() => setIsHovered(true)} // Cuando el ratón entra
-                                onMouseLeave={() => setIsHovered(false)} // Cuando el ratón sale
-                            >
-                                {!isLoadingEditor &&
-                                    isHovered && ( // Muestra el botón solo si está cargando y el ratón está encima
-                                        <div
-                                            className="absolute top-2 right-6 z-10 cursor-pointer bg-gray-800 py-1 px-2 rounded-sm hover:bg-gray-700 hover:scale-101 transition-all duration-200"
-                                            onClick={copyCode}
-                                        >
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <div className="flex">
-                                                        <Copy className="w-4 h-4 mr-1" />
-                                                        <span className="text-xs transition-colors duration-200">
-                                                            Copy code
-                                                        </span>
-                                                    </div>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>Copy code</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </div>
-                                    )}
-                                <Editor
-                                    height="100%"
-                                    defaultLanguage="javascript"
-                                    theme={editorTheme}
-                                    value={getCurrentCode()}
-                                    onChange={handleEditorChange}
-                                    beforeMount={handleEditorBeforeMount}
-                                    options={{
-                                        minimap: { enabled: false },
-                                        fontSize: 14,
-                                        lineNumbers: "on",
-                                        roundedSelection: false,
-                                        scrollBeyondLastLine: true,
-                                        automaticLayout: true,
-                                        wordWrap: "on",
-                                        suggestOnTriggerCharacters: true,
-                                        formatOnPaste: true,
-                                        formatOnType: true
-                                    }}
-                                />
-                            </div>
+                            )}
+                            <Editor
+                                height="100%"
+                                defaultLanguage="javascript"
+                                theme={editorTheme}
+                                value={getCurrentCode()}
+                                onChange={handleEditorChange}
+                                beforeMount={handleEditorBeforeMount}
+                                options={{
+                                    minimap: { enabled: false },
+                                    fontSize: 14,
+                                    lineNumbers: "on",
+                                    roundedSelection: false,
+                                    scrollBeyondLastLine: true,
+                                    automaticLayout: true,
+                                    wordWrap: "on",
+                                    suggestOnTriggerCharacters: true,
+                                    formatOnPaste: true,
+                                    formatOnType: true
+                                }}
+                            />
                         </div>
-                    </ResizablePanel>
+                    </div>
+                </ResizablePanel>
 
-                    <ResizableHandle withHandle />
+                <ResizableHandle withHandle />
 
-                    <ResizablePanel defaultSize={50} minSize={30}>
-                        <div className="h-full bg-black/5 dark:bg-white/5">
-                            <TerminalHeader />
-                            <TerminalOutput output={output} ref={scrollAreaRef} />
+                <ResizablePanel defaultSize={50} minSize={20}>
+                    <div className="h-full bg-black/5 dark:bg-white/5">
+                        <TerminalHeader />
+                        <TerminalOutput output={output} ref={scrollAreaRef} />
+                    </div>
+                </ResizablePanel>
+            </ResizablePanelGroup>
+
+            <Sheet open={isPackageSheetOpen} onOpenChange={setIsPackageSheetOpen}>
+                <SheetContent>
+                    <SheetHeader>
+                        <SheetTitle>Available Packages</SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-4">
+                        <div className="space-y-4">
+                            {Object.keys(AVAILABLE_PACKAGES).map((pkg) => (
+                                <div key={pkg} className="flex items-center justify-between">
+                                    <span className="text-sm font-medium">{pkg}</span>
+                                    <Button
+                                        size="sm"
+                                        variant={packages.includes(pkg) ? "destructive" : "outline"}
+                                        onClick={() => handlePackageToggle(pkg)}
+                                    >
+                                        {packages.includes(pkg) ? "Remove" : "Add"}
+                                    </Button>
+                                </div>
+                            ))}
                         </div>
-                    </ResizablePanel>
-                </ResizablePanelGroup>
-
-                <Sheet open={isPackageSheetOpen} onOpenChange={setIsPackageSheetOpen}>
-                    <SheetContent>
-                        <SheetHeader>
-                            <SheetTitle>Available Packages</SheetTitle>
-                        </SheetHeader>
-                        <div className="mt-4">
-                            <div className="space-y-4">
-                                {Object.keys(AVAILABLE_PACKAGES).map((pkg) => (
-                                    <div key={pkg} className="flex items-center justify-between">
-                                        <span className="text-sm font-medium">{pkg}</span>
-                                        <Button
-                                            size="sm"
-                                            variant={
-                                                packages.includes(pkg) ? "destructive" : "outline"
-                                            }
-                                            onClick={() => handlePackageToggle(pkg)}
-                                        >
-                                            {packages.includes(pkg) ? "Remove" : "Add"}
-                                        </Button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </SheetContent>
-                </Sheet>
-            </TooltipProvider>
-        </>
+                    </div>
+                </SheetContent>
+            </Sheet>
+        </TooltipProvider>
     );
 }
