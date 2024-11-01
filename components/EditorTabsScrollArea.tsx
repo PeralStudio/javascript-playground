@@ -49,7 +49,7 @@ export function EditorTabsScrollArea({ children }: { children: React.ReactNode }
 
     return (
         <div ref={scrollRef} className="overflow-x-auto whitespace-nowrap hide-scrollbar">
-            <div className="flex space-x-2">{children}</div>
+            <div className="flex space-x-1">{children}</div>
         </div>
     );
 }

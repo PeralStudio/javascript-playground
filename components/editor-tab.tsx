@@ -56,7 +56,7 @@ export function EditorTab({
                 />
             ) : (
                 <>
-                    <span className="mr-2">{name}</span>
+                    <span className="mr-2 text-sm">{name}</span>
                     <div className="flex gap-1">
                         <Button
                             variant="ghost"
