@@ -392,7 +392,7 @@ export function CodeEditor() {
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button
-                                                variant="secondary"
+                                                variant="ghost"
                                                 size="sm"
                                                 className="px-2 ml-1"
                                                 onClick={addNewTab}
