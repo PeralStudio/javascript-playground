@@ -1,14 +1,14 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Download, Moon, Package, Play, Share2, Sun, Trash2 } from "lucide-react";
+import { Download, Moon, Package, Play, Share2, Sun /* , Trash2 */ } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface EditorToolbarProps {
     packagesCount: number;
     editorTheme: "vs-dark" | "light";
     onRun: () => void;
-    onReset: () => void;
+    // onReset: () => void;
     onToggleTheme: () => void;
     onDownload: () => void;
     onShare: () => void;
@@ -19,7 +19,7 @@ export function EditorToolbar({
     packagesCount,
     editorTheme,
     onRun,
-    onReset,
+    // onReset,
     onToggleTheme,
     onDownload,
     onShare,
@@ -33,10 +33,10 @@ export function EditorToolbar({
                         <Play className="w-4 h-4 mr-2" />
                         Run
                     </Button>
-                    <Button onClick={onReset} variant="outline" size="sm">
+                    {/* <Button onClick={onReset} variant="outline" size="sm">
                         <Trash2 className="w-4 h-4 mr-2" />
                         Reset
-                    </Button>
+                    </Button> */}
                     <Button onClick={() => togglePackage()} variant="outline" size="sm">
                         <Package className="w-4 h-4 mr-2" />
                         Packages ({packagesCount})

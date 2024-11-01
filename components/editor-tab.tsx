@@ -31,9 +31,9 @@ export function EditorTab({
     const inputRef = useRef<HTMLInputElement>(null);
 
     const handleRenameKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-        if (event.key === 'Enter') {
+        if (event.key === "Enter") {
             onRename(event.currentTarget.value);
-        } else if (event.key === 'Escape') {
+        } else if (event.key === "Escape") {
             onCancelRename();
         }
     };
@@ -49,7 +49,7 @@ export function EditorTab({
                 <Input
                     ref={inputRef}
                     className="h-6 w-32 px-1 py-0"
-                    defaultValue={name.replace(/\.js$/, '')}
+                    defaultValue={name.replace(/\.js$/, "")}
                     onBlur={(e) => onRename(e.target.value)}
                     onKeyDown={handleRenameKeyDown}
                     autoFocus

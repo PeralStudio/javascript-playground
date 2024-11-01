@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Editor from "@monaco-editor/react";
-import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Terminal, Circle, Copy } from "lucide-react";
@@ -18,6 +17,8 @@ import moment from "moment";
 import dayjs from "dayjs";
 import chalk from "chalk";
 import * as R from "ramda";
+import { TerminalHeader } from "./terminal-header";
+import { EditorTabsScrollArea } from "./EditorTabsScrollArea";
 
 interface FileTab {
     id: string;
@@ -55,6 +56,7 @@ export function CodeEditor() {
     const [nextTabId, setNextTabId] = useState(1);
     const [tabs, setTabs] = useState<FileTab[]>([]);
     const [activeTab, setActiveTab] = useState("");
+    const [isLoadingEditor, setIsLoadingEditor] = useState(true);
 
     useEffect(() => {
         const savedTabs = localStorage.getItem("playground-tabs");
@@ -122,7 +124,7 @@ export function CodeEditor() {
         },
         error: (...args: any[]) => {
             const formatted = args.map((arg) => String(arg)).join(" ");
-            outputRef.current = [...outputRef.current, `ReferenceError: ${formatted}`];
+            outputRef.current = [...outputRef.current, `⚠️ ReferenceError: ${formatted}`];
             setOutput(outputRef.current.join("\n"));
             setError(formatted);
         },
@@ -275,13 +277,13 @@ export function CodeEditor() {
         return tabs.find((tab) => tab.id === activeTab)?.content || "";
     };
 
-    const clearCode = () => {
-        setTabs((prev) =>
-            prev.map((tab) => (tab.id === activeTab ? { ...tab, content: defaultCode } : tab))
-        );
-        executeCode(defaultCode);
-        toast.info("Editor reset to default code");
-    };
+    // const clearCode = () => {
+    //     setTabs((prev) =>
+    //         prev.map((tab) => (tab.id === activeTab ? { ...tab, content: defaultCode } : tab))
+    //     );
+    //     executeCode(defaultCode);
+    //     toast.info("Editor reset to default code");
+    // };
 
     const shareCode = async () => {
         try {
@@ -349,135 +351,144 @@ export function CodeEditor() {
         toast.success(packages.includes(pkg) ? `Package ${pkg} removed` : `Package ${pkg} added`);
     };
 
+    const handleEditorBeforeMount = () => setIsLoadingEditor(false);
+
     return (
         <>
-            <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border">
-                <ResizablePanel defaultSize={50} minSize={35}>
-                    <div className="h-full flex flex-col">
-                        <EditorToolbar
-                            packagesCount={packages.length}
-                            editorTheme={editorTheme}
-                            onRun={runCode}
-                            onReset={clearCode}
-                            onToggleTheme={toggleEditorTheme}
-                            onDownload={downloadCode}
-                            onShare={shareCode}
-                            togglePackage={togglePackage}
-                        />
-                        <div className="border-b">
-                            <div className="flex items-center">
-                                {tabs.map((tab) => (
-                                    <EditorTab
-                                        key={tab.id}
-                                        id={tab.id}
-                                        name={tab.name}
-                                        isActive={activeTab === tab.id}
-                                        isEditing={!!tab.isEditing}
-                                        onActivate={() => setActiveTab(tab.id)}
-                                        onClose={(e) => closeTab(tab.id, e)}
-                                        onStartRename={(e) => startRenaming(tab.id, e)}
-                                        onRename={(newName) => handleRename(tab.id, newName)}
-                                        onCancelRename={cancelRename}
-                                    />
-                                ))}
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="px-2"
-                                    onClick={addNewTab}
-                                >
-                                    <Plus className="w-4 h-4" />
-                                </Button>
-                            </div>
-                        </div>
-                        <div className="flex-1 relative">
-                            {" "}
-                            <div className="absolute top-2 right-6 z-10">
-                                <TooltipProvider>
+            <TooltipProvider>
+                <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border">
+                    <ResizablePanel defaultSize={50} minSize={35}>
+                        <div className="h-full flex flex-col">
+                            <EditorToolbar
+                                packagesCount={packages.length}
+                                editorTheme={editorTheme}
+                                onRun={runCode}
+                                // onReset={clearCode}
+                                onToggleTheme={toggleEditorTheme}
+                                onDownload={downloadCode}
+                                onShare={shareCode}
+                                togglePackage={togglePackage}
+                            />
+                            <div className="border-b">
+                                <div className="flex items-center">
+                                    <EditorTabsScrollArea>
+                                        {tabs.map((tab) => (
+                                            <EditorTab
+                                                key={tab.id}
+                                                id={tab.id}
+                                                name={tab.name}
+                                                isActive={activeTab === tab.id}
+                                                isEditing={!!tab.isEditing}
+                                                onActivate={() => setActiveTab(tab.id)}
+                                                onClose={(e) => closeTab(tab.id, e)}
+                                                onStartRename={(e) => startRenaming(tab.id, e)}
+                                                onRename={(newName) =>
+                                                    handleRename(tab.id, newName)
+                                                }
+                                                onCancelRename={cancelRename}
+                                            />
+                                        ))}
+                                    </EditorTabsScrollArea>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <Button onClick={copyCode} variant="ghost" size="sm">
-                                                <Copy className="w-4 h-4" />
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                className="px-2 ml-1"
+                                                onClick={addNewTab}
+                                            >
+                                                <Plus className="w-4 h-4" />
                                             </Button>
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                            <p>Copy code</p>
+                                            <p>New tab</p>
                                         </TooltipContent>
                                     </Tooltip>
-                                </TooltipProvider>
-                            </div>
-                            <Editor
-                                height="100%"
-                                defaultLanguage="javascript"
-                                theme={editorTheme}
-                                value={getCurrentCode()}
-                                onChange={handleEditorChange}
-                                options={{
-                                    minimap: { enabled: false },
-                                    fontSize: 14,
-                                    lineNumbers: "on",
-                                    roundedSelection: false,
-                                    scrollBeyondLastLine: true,
-                                    automaticLayout: true,
-                                    wordWrap: "on",
-                                    suggestOnTriggerCharacters: true,
-                                    formatOnPaste: true,
-                                    formatOnType: true
-                                }}
-                            />
-                        </div>
-                    </div>
-                </ResizablePanel>
-
-                <ResizableHandle withHandle />
-
-                <ResizablePanel defaultSize={50} minSize={30}>
-                    <div className="h-full bg-black/5 dark:bg-white/5">
-                        <div className="p-4 border-b bg-background/95">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <Terminal className="w-5 h-5" />
-                                    <h2 className="text-lg font-semibold">Console Output</h2>
-                                </div>
-                                <div className="flex gap-1.5">
-                                    <Circle className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                    <Circle className="w-3 h-3 fill-green-400 text-green-400" />
-                                    <Circle className="w-3 h-3 fill-red-400 text-red-400" />
                                 </div>
                             </div>
+                            <div className="flex-1 relative">
+                                {!isLoadingEditor && (
+                                    <div className="absolute top-2 right-6 z-10">
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button
+                                                    onClick={copyCode}
+                                                    variant="ghost"
+                                                    size="sm"
+                                                >
+                                                    <Copy className="w-4 h-4" />
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Copy code</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </div>
+                                )}
+                                <Editor
+                                    height="100%"
+                                    defaultLanguage="javascript"
+                                    theme={editorTheme}
+                                    value={getCurrentCode()}
+                                    onChange={handleEditorChange}
+                                    beforeMount={handleEditorBeforeMount}
+                                    options={{
+                                        minimap: { enabled: false },
+                                        fontSize: 14,
+                                        lineNumbers: "on",
+                                        roundedSelection: false,
+                                        scrollBeyondLastLine: true,
+                                        automaticLayout: true,
+                                        wordWrap: "on",
+                                        suggestOnTriggerCharacters: true,
+                                        formatOnPaste: true,
+                                        formatOnType: true
+                                    }}
+                                />
+                            </div>
                         </div>
-                        <ScrollArea ref={scrollAreaRef} className="h-[calc(100%-4rem)] p-4">
-                            <pre className="font-mono text-sm whitespace-pre-wrap break-words p-4 rounded-lg ">
-                                {output || "Console output will appear here..."}
-                            </pre>
-                        </ScrollArea>
-                    </div>
-                </ResizablePanel>
-            </ResizablePanelGroup>
+                    </ResizablePanel>
 
-            <Sheet open={isPackageSheetOpen} onOpenChange={setIsPackageSheetOpen}>
-                <SheetContent>
-                    <SheetHeader>
-                        <SheetTitle>Available Packages</SheetTitle>
-                    </SheetHeader>
-                    <div className="mt-4">
-                        <div className="space-y-4">
-                            {Object.keys(AVAILABLE_PACKAGES).map((pkg) => (
-                                <div key={pkg} className="flex items-center justify-between">
-                                    <span className="text-sm font-medium">{pkg}</span>
-                                    <Button
-                                        size="sm"
-                                        variant={packages.includes(pkg) ? "destructive" : "outline"}
-                                        onClick={() => handlePackageToggle(pkg)}
-                                    >
-                                        {packages.includes(pkg) ? "Remove" : "Add"}
-                                    </Button>
-                                </div>
-                            ))}
+                    <ResizableHandle withHandle />
+
+                    <ResizablePanel defaultSize={50} minSize={30}>
+                        <div className="h-full bg-black/5 dark:bg-white/5">
+                            <TerminalHeader />
+                            <ScrollArea ref={scrollAreaRef} className="h-[calc(100%-4rem)] p-4">
+                                <pre className="font-mono text-sm whitespace-pre-wrap break-words p-4 rounded-lg ">
+                                    {output || "Console output will appear here..."}
+                                </pre>
+                            </ScrollArea>
                         </div>
-                    </div>
-                </SheetContent>
-            </Sheet>
+                    </ResizablePanel>
+                </ResizablePanelGroup>
+
+                <Sheet open={isPackageSheetOpen} onOpenChange={setIsPackageSheetOpen}>
+                    <SheetContent>
+                        <SheetHeader>
+                            <SheetTitle>Available Packages</SheetTitle>
+                        </SheetHeader>
+                        <div className="mt-4">
+                            <div className="space-y-4">
+                                {Object.keys(AVAILABLE_PACKAGES).map((pkg) => (
+                                    <div key={pkg} className="flex items-center justify-between">
+                                        <span className="text-sm font-medium">{pkg}</span>
+                                        <Button
+                                            size="sm"
+                                            variant={
+                                                packages.includes(pkg) ? "destructive" : "outline"
+                                            }
+                                            onClick={() => handlePackageToggle(pkg)}
+                                        >
+                                            {packages.includes(pkg) ? "Remove" : "Add"}
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </SheetContent>
+                </Sheet>
+            </TooltipProvider>
         </>
     );
 }
