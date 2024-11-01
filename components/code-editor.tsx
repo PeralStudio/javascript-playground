@@ -59,12 +59,12 @@ export function CodeEditor() {
     const [activeTab, setActiveTab] = useState("");
     const [isLoadingEditor, setIsLoadingEditor] = useState(true);
     const [isHovered, setIsHovered] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => {
+    useEffect(() => {
         // Solo se ejecuta en el cliente
         const handleResize = () => {
-            setIsMobile(window.innerWidth <= 768);
+            setIsMobile(window.innerWidth <= 840);
         };
 
         handleResize(); // Ejecutar una vez al montar
@@ -347,9 +347,7 @@ export function CodeEditor() {
 
     const handlePackageToggle = (pkg: string) => {
         setPackages((prev) => {
-            const newPackages = prev.includes(pkg)
-                ? prev.filter((p) => p !== pkg)
-                : [...prev, pkg];
+            const newPackages = prev.includes(pkg) ? prev.filter((p) => p !== pkg) : [...prev, pkg];
             localStorage.setItem("playground-packages", JSON.stringify(newPackages));
             return newPackages;
         });
