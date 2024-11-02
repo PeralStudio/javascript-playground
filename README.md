@@ -5,6 +5,10 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.3.3-38B2AC)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
+<div align="center">
+  <img src="/captura.png" alt="CodePer Logo" height="auto"/>
+</div>
+
 Un potente compilador de JavaScript en línea inspirado en RunJS, que te permite escribir, ejecutar y experimentar con código JavaScript en tiempo real. Con una interfaz moderna y características avanzadas para mejorar tu experiencia de desarrollo.
 
 ## ✨ Características Principales
